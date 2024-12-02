@@ -4,12 +4,13 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
   target: 'web',
-  mode: 'development',
+  mode: 'production',
   entry: {
-    app: './src/index.js' // app作为打包文件名称，默认为 main
+    app: './src/index.js', // app作为打包文件名称，默认为 main
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -34,7 +35,7 @@ module.exports = {
       {
         test: /\.css$/,
         use: [
-          'style-loader',
+          MiniCssExtractPlugin.loader,
           {
             loader: 'css-loader',
             options: {
@@ -53,12 +54,71 @@ module.exports = {
           'postcss-loader',
         ],
       },
+      {
+        test: /\.module\.(less|css)/, // 处理局部样式
+        exclude: /node_modules/,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              importLoaders: 1,
+              esModule: false,
+              modules: { localIdentName: '[name]__[local]--[hash:base64:4]' }, // 启用 CSS 模块规范
+            },
+          },
+          'postcss-loader',
+          {
+            loader: 'less-loader',
+            options: {
+              lessOptions: {
+                javascriptEnabled: true,
+                /**
+                 * modifyVars 自动加载到文件尾部，会覆盖其他less的申明变量
+                 */
+                modifyVars: {
+                  'link-color': '#1DA57A',
+                },
+              },
+              /**
+               * modifyVars 自动加载到文件头部，会被其他less的申明变量覆盖
+               */
+              additionalData: `@color: orange;`,
+            },
+          },
+        ],
+      },
       /**
        * less 需要安装 less 和 less-loader
        * less src/css/index.less index.css 该less命令为把src底下的less转为css
        * postcss-loader 统一配置到 postcss.config
        */
-      { test: /\.less$/, use: ['style-loader', 'css-loader', 'postcss-loader', 'less-loader'] },
+      {
+        test: /\.less$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          'postcss-loader',
+          {
+            loader: 'less-loader',
+            options: {
+              lessOptions: {
+                javascriptEnabled: true,
+                /**
+                 * modifyVars 自动加载到文件尾部，会覆盖其他less的申明变量
+                 */
+                modifyVars: {
+                  'link-color': '#1DA57A',
+                },
+              },
+              /**
+               * modifyVars 自动加载到文件头部，会被其他less的申明变量覆盖
+               */
+              additionalData: `@color: orange;`,
+            },
+          },
+        ],
+      },
       /**
        * webpack5内置 asset 资源处理，推荐使用
        * url-loader 是基于 file-loader 封装的，
@@ -108,6 +168,7 @@ module.exports = {
         },
       ],
     }),
+    new MiniCssExtractPlugin(),
   ],
   optimization: {
     splitChunks: {

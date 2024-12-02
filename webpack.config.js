@@ -3,6 +3,7 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
@@ -10,14 +11,15 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 module.exports = {
   target: 'web',
   mode: 'development',
-  entry: './src/index.js',
+  entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'js/[name].js',
+    clean: true,
   },
   devServer: {
     hot: true,
-    port: 3030,
+    port: 3003,
     open: true,
     static: {
       directory: path.join(__dirname, 'public'),
@@ -32,7 +34,7 @@ module.exports = {
       {
         oneOf: [
           {
-            test: /\.(js|jsx)$/,
+            test: /\.(js|jsx|ts|tsx)$/,
             exclude: /node_modules/,
             use: [
               {
@@ -51,7 +53,8 @@ module.exports = {
           {
             test: /\.css$/,
             use: [
-              'style-loader',
+              // 'style-loader',
+              MiniCssExtractPlugin.loader,
               {
                 loader: 'css-loader',
                 options: {
@@ -78,7 +81,7 @@ module.exports = {
               {
                 loader: 'css-loader',
                 options: {
-                  importLoaders: 1,
+                  importLoaders: 2,
                   esModule: false,
                   modules: { localIdentName: '[name]__[local]--[hash:base64:4]' }, // 启用 CSS 模块规范
                 },
@@ -135,28 +138,29 @@ module.exports = {
               },
             ],
           },
-          /**
-           * webpack5内置 asset 资源处理，推荐使用
-           * url-loader 是基于 file-loader 封装的，
-           * 可以把小文件转换为 base64 格式的 URL，从而减少网络请求次数
-           */
+          { test: /\.(eot|TTF|ttf|woff|woff2)$/, type: 'asset/inline' },
           {
-            test: /\.(svg|otf|ttf|woff2?|eot|gif|png|jpe?g)(\?\S*)?$/,
-            loader: 'url-loader',
-            options: {
-              limit: 100000,
-              name: '[name].[hash:7].[ext]',
-              outputPath: 'images',
-              publicPath: './images',
-              esModule: false,
+            test: /\.(png|jpg|jpeg|gif|bmp|webp)$/,
+            type: 'asset',
+            parser: {
+              dataUrlCondition: {
+                maxSize: 8192,
+              },
             },
+            generator: {
+              filename: 'static/images/[hash][ext][query]'
+            }
+          },
+          {
+            test: /\.svg$/,
+            use: ['@svgr/webpack'],
           },
         ],
       },
     ],
   },
   resolve: {
-    extensions: ['.js', '.jsx', '.json', '.less'],
+    extensions: ['.js', '.jsx','.tsx', '.json', '.less'],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
@@ -166,12 +170,10 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html',
       filename: './index.html',
-      minify: true, // 压缩html
+      minify: false, // 压缩html
       removeComments: true,
       title: 'development',
     }),
-    // 打包前清除文件
-    new CleanWebpackPlugin(),
     // 打包进度条
     new ProgressBarPlugin(),
     new webpack.DefinePlugin({
@@ -187,6 +189,7 @@ module.exports = {
       ],
     }),
     new ReactRefreshWebpackPlugin({ overlay: false }),
+    new MiniCssExtractPlugin(),
     // new BundleAnalyzerPlugin({
     //   analyzerPort: 8080, // 与charles的端口区分开
     // }),
