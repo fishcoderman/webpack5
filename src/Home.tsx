@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Tag } from 'antd';
-import { join } from 'lodash';
+import { join } from 'lodash-es';
 import './css/index.css';
-import result from './result.json';
 import styles from './css/home.module.less';
 
 const Home = () => {
   const [count, setCount] = useState(1);
-  console.log(result);
+
   return (
     <div className={styles['home']}>
       <h4 style={{ color: '@color' }}>This is Home !</h4>

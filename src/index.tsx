@@ -1,3 +1,5 @@
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Button, Space, Slider } from 'antd';

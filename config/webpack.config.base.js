@@ -1,33 +1,54 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
+const isLocalDev = process.env.NODE_ENV === 'development';
+
+console.info('isLocalDev', isLocalDev);
+console.info('process', process.env);
+
+// 生产环境使用 MiniCssExtractPlugin 从 js 中提取 css 到单独的文件中
+const styleLoader = isLocalDev ? { loader: 'style-loader' } : MiniCssExtractPlugin.loader;
+
+const cssLoader = { loader: 'css-loader', options: { sourceMap: false, importLoaders: 2} };
+
+// 必须在 style-loader, css-loader 之后，在其他 loader 之前
+const postcssLoader = {
+  loader: 'postcss-loader',
+  options: {
+    sourceMap: false,
+  },
+};
+
+const lessLoader = {
+  loader: 'less-loader', // Compiles Less to CSS.
+  options: {
+    lessOptions: {
+      javascriptEnabled: true,
+      /**
+       * modifyVars 自动加载到文件尾部，会覆盖其他less的申明变量
+       */
+      modifyVars: {
+        'link-color': '#1DA57A',
+      },
+    },
+    /**
+     * modifyVars 自动加载到文件头部，会被其他less的申明变量覆盖 
+     * 比如： additionalData: `@import '~src/style/variables.less';` 
+     */
+    additionalData: `@color: orange;`,
+  },
+};
 
 module.exports = {
-  target: 'web',
-  mode: 'development',
-  entry: './src/index.tsx',
+  entry: path.resolve(__dirname, '../src/index.tsx'),
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, '../dist'),
     filename: 'js/[name].js',
     clean: true,
-  },
-  devServer: {
-    hot: true,
-    port: 3003,
-    open: true,
-    static: {
-      directory: path.join(__dirname, 'public'),
-    },
-    client: {
-      overlay: false,
-      progress: true,
-    },
   },
   module: {
     rules: [
@@ -40,7 +61,8 @@ module.exports = {
               {
                 loader: 'babel-loader',
                 options: {
-                  plugins: [require.resolve('react-refresh/babel')].filter(Boolean),
+                  cacheDirectory: true,
+                  plugins: isLocalDev ? [require.resolve('react-refresh/babel')] : [],
                 },
               },
             ],
@@ -49,94 +71,30 @@ module.exports = {
            * loader的顺序为从右到左，从下到上
            * css-loader先在转化，style-loader再把他添加到头部
            * postcss-loader 统一配置到 postcss.config
-           */
-          {
-            test: /\.css$/,
-            use: [
-              // 'style-loader',
-              MiniCssExtractPlugin.loader,
-              {
-                loader: 'css-loader',
-                options: {
-                  /**
-                   * 如果发现文件文件中有使用@import引入样式，如果不配置该属性，
-                   * 那么postcss-loader等不会解析@import里面的样式，importLoaders属性为1，
-                   * 代表向下加载1个loader，属性为2代表向下加载2个loader
-                   */
-                  importLoaders: 1,
-                  /**
-                   * css中图片加载默认为require，webpack5中加载图片为es6
-                   */
-                  esModule: false,
-                },
-              },
-              'postcss-loader',
-            ],
-          },
-          {
-            test: /\.module\.(less|css)/, // 处理局部样式
-            exclude: /node_modules/,
-            use: [
-              'style-loader',
-              {
-                loader: 'css-loader',
-                options: {
-                  importLoaders: 2,
-                  esModule: false,
-                  modules: { localIdentName: '[name]__[local]--[hash:base64:4]' }, // 启用 CSS 模块规范
-                },
-              },
-              'postcss-loader',
-              {
-                loader: 'less-loader',
-                options: {
-                  lessOptions: {
-                    javascriptEnabled: true,
-                    /**
-                     * modifyVars 自动加载到文件尾部，会覆盖其他less的申明变量
-                     */
-                    modifyVars: {
-                      'link-color': '#1DA57A',
-                    },
-                  },
-                  /**
-                   * modifyVars 自动加载到文件头部，会被其他less的申明变量覆盖
-                   */
-                  additionalData: `@color: orange;`,
-                },
-              },
-            ],
-          },
-          /**
            * less 需要安装 less 和 less-loader
            * less src/css/index.less index.css 该less命令为把src底下的less转为css
            * postcss-loader 统一配置到 postcss.config
            */
           {
-            test: /\.less$/,
+            test: /\.module\.(less|css)/, // 处理局部样式
+            exclude: /node_modules/,
             use: [
-              'style-loader',
-              'css-loader',
-              'postcss-loader',
+              styleLoader,
               {
-                loader: 'less-loader',
+                ...cssLoader,
                 options: {
-                  lessOptions: {
-                    javascriptEnabled: true,
-                    /**
-                     * modifyVars 自动加载到文件尾部，会覆盖其他less的申明变量
-                     */
-                    modifyVars: {
-                      'link-color': '#1DA57A',
-                    },
-                  },
-                  /**
-                   * modifyVars 自动加载到文件头部，会被其他less的申明变量覆盖
-                   */
-                  additionalData: `@color: orange;`,
+                  ...cssLoader.options,
+                  modules: { localIdentName: '[name]__[local]--[hash:base64:4]' }, // 启用 CSS 模块规范
                 },
               },
+              postcssLoader,
+              lessLoader,
             ],
+          },
+          {
+            test: /\.(less|css)/, // 处理 node_modules 的样式
+            exclude: /node_modules/,
+            use: [styleLoader, cssLoader, postcssLoader, lessLoader],
           },
           { test: /\.(eot|TTF|ttf|woff|woff2)$/, type: 'asset/inline' },
           {
@@ -162,14 +120,13 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx','.tsx', '.json', '.less'],
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, '../src'),
     },
   },
   plugins: [
     // html模版
     new HtmlWebpackPlugin({
-      template: './public/index.html',
-      filename: './index.html',
+      template: path.resolve(__dirname, "../public/index.html"),
       minify: false, // 压缩html
       removeComments: true,
       title: 'development',
@@ -177,8 +134,10 @@ module.exports = {
     // 打包进度条
     new ProgressBarPlugin(),
     new webpack.DefinePlugin({
-      BASE_URL: "'./'",
-      'process.env.firstName': JSON.stringify('Tao'),
+      'BASE_URL': "'./'",
+      'process.env': {
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+      },
     }),
     new CopyPlugin({
       patterns: [
@@ -188,11 +147,6 @@ module.exports = {
         },
       ],
     }),
-    new ReactRefreshWebpackPlugin({ overlay: false }),
-    new MiniCssExtractPlugin(),
-    // new BundleAnalyzerPlugin({
-    //   analyzerPort: 8080, // 与charles的端口区分开
-    // }),
   ],
   optimization: {
     splitChunks: {
