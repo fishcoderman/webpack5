@@ -4,11 +4,13 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const os = require('os');
+
+// 获取最大工作进程数量,每个线程启动有600ms的开销，建议只有项目工程大的情况下开启
+const threads = Math.ceil(os.cpus().length / 2);
+  
 
 const isLocalDev = process.env.NODE_ENV === 'development';
-
-console.info('isLocalDev', isLocalDev);
-console.info('process', process.env);
 
 // 生产环境使用 MiniCssExtractPlugin 从 js 中提取 css 到单独的文件中
 const styleLoader = isLocalDev ? { loader: 'style-loader' } : MiniCssExtractPlugin.loader;
@@ -47,7 +49,9 @@ module.exports = {
   entry: path.resolve(__dirname, '../src/index.tsx'),
   output: {
     path: path.resolve(__dirname, '../dist'),
-    filename: 'js/[name].js',
+    filename: 'js/[name].js', // 主入口打包的资源地址
+    chunkFilename: 'js/[id].[contenthash:8].chunk.js', // 拆分出来的chunk包资源地址
+    assetModuleFilename: 'static/images/[hash][ext][query]', // type: asset 类型的资源，比如字体，图片等打包出来的资源地址
     clean: true,
   },
   module: {
@@ -58,6 +62,12 @@ module.exports = {
             test: /\.(js|jsx|ts|tsx)$/,
             exclude: /node_modules/,
             use: [
+              {
+                loader: "thread-loader",
+                options: {
+                  workers: threads,
+                },
+              },
               {
                 loader: 'babel-loader',
                 options: {
@@ -104,9 +114,6 @@ module.exports = {
               dataUrlCondition: {
                 maxSize: 8192,
               },
-            },
-            generator: {
-              filename: 'static/images/[hash][ext][query]'
             }
           },
           {
@@ -148,7 +155,16 @@ module.exports = {
       ],
     }),
   ],
+  externals: {
+    react: 'React',
+    'react-dom': 'ReactDOM',
+  },
   optimization: {
+    /**
+     * runtimeChunk 用于将运行时代码（runtime）从入口文件中提取出来，生成单独的 chunk 文件。
+     * 为什么需要提取运行时代码？当入口文件的内容发生变化时，如果运行时代码和业务代码混合在一起，整个文件会失效，浏览器缓存无法有效利用。
+     */
+    runtimeChunk: true, 
     splitChunks: {
       // 表示选择哪些 chunks 进行分割，可选值有：async，initial和all
       chunks: 'all',

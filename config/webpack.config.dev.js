@@ -1,7 +1,9 @@
 const path = require('path');
-
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const { merge } = require('webpack-merge');
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const HtmlWebpackTagsPlugin = require("html-webpack-tags-plugin");
+const ESLintPlugin = require('eslint-webpack-plugin');
+
 const utils = require('./utils');
 const config_base = require('./webpack.config.base');
 
@@ -21,10 +23,22 @@ const config_dev = {
     },
   },
   plugins: [
-    new ReactRefreshWebpackPlugin({ overlay: false })
+    new ReactRefreshWebpackPlugin({ overlay: false }),
+    new ESLintPlugin({
+      context: path.resolve(__dirname, '../src'),
+      extensions: ['.js', '.jsx', '.ts', '.tsx'],
+      lintDirtyModulesOnly: true,
+      cache: true,
+    }),
+    new HtmlWebpackTagsPlugin({
+      tags: [
+        'https://unpkg.com/react@17/umd/react.development.js',
+        'https://unpkg.com/react-dom@17/umd/react-dom.development.js',
+      ],
+      append: false,
+    }),
   ]
 };
-
 
 module.exports = () =>
   new Promise((resolve, reject) => {
