@@ -9,6 +9,7 @@ module.exports = {
   },
   rules: {
     'semi': ['error', 'always'],
+    'quotes': ['error', 'double'], // 强制使用双引号
     // 例如：禁用 'react/prop-types' 检查
     'react/prop-types': 'off',
     'indent': ['error', 2],  // 强制使用 2 个空格缩进
