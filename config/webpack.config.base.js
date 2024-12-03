@@ -72,6 +72,8 @@ module.exports = {
                 loader: 'babel-loader',
                 options: {
                   cacheDirectory: true,
+                  cacheCompression: false,
+                  compact: true,
                   plugins: isLocalDev ? [require.resolve('react-refresh/babel')] : [],
                 },
               },
@@ -106,7 +108,7 @@ module.exports = {
             exclude: /node_modules/,
             use: [styleLoader, cssLoader, postcssLoader, lessLoader],
           },
-          { test: /\.(eot|TTF|ttf|woff|woff2)$/, type: 'asset/inline' },
+          { test: /\.(eot|TTF|ttf|woff|woff2)$/, type: 'asset/resource' },
           {
             test: /\.(png|jpg|jpeg|gif|bmp|webp)$/,
             type: 'asset',

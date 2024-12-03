@@ -12,7 +12,6 @@ const isLocalDev = process.env.NODE_ENV === 'development';
 const config_pro = {
   mode: 'production',
   devtool: 'source-map',
-  entry: './src/index.tsx',
   plugins: [
     new MiniCssExtractPlugin({
       filename: "static/css/[name].css",

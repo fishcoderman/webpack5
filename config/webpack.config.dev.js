@@ -15,15 +15,15 @@ const config_dev = {
     port: 3003,
     open: true,
     static: {
-      directory: path.join(__dirname, 'public'),
+      directory: path.join(__dirname, '../public'),
     },
     client: {
       overlay: false,
       progress: true,
     },
+    historyApiFallback: true,
   },
   plugins: [
-    new ReactRefreshWebpackPlugin({ overlay: false }),
     new ESLintPlugin({
       context: path.resolve(__dirname, '../src'),
       extensions: ['.js', '.jsx', '.ts', '.tsx'],
@@ -37,6 +37,7 @@ const config_dev = {
       ],
       append: false,
     }),
+    new ReactRefreshWebpackPlugin({ overlay: false }),
   ]
 };
 
