@@ -5,12 +5,6 @@ module.exports = {
     '@babel/preset-typescript',
   ],
 
-  env: {
-    test: {
-      plugins: ['istanbul'],
-    },
-  },
-
   plugins: [
     ["import", { "libraryName": "antd", "libraryDirectory": "es", "style": true }]
   ],

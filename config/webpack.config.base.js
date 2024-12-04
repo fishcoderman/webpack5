@@ -8,14 +8,14 @@ const os = require('os');
 
 // 获取最大工作进程数量,每个线程启动有600ms的开销，建议只有项目工程大的情况下开启
 const threads = Math.ceil(os.cpus().length / 2);
-  
+
 
 const isLocalDev = process.env.NODE_ENV === 'development';
 
 // 生产环境使用 MiniCssExtractPlugin 从 js 中提取 css 到单独的文件中
 const styleLoader = isLocalDev ? { loader: 'style-loader' } : MiniCssExtractPlugin.loader;
 
-const cssLoader = { loader: 'css-loader', options: { sourceMap: false, importLoaders: 2} };
+const cssLoader = { loader: 'css-loader', options: { sourceMap: false, importLoaders: 2 } };
 
 // 必须在 style-loader, css-loader 之后，在其他 loader 之前
 const postcssLoader = {
@@ -50,7 +50,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, '../dist'),
     filename: 'js/[name].js', // 主入口打包的资源地址
-    chunkFilename: 'js/[id].[contenthash:8].chunk.js', // 拆分出来的chunk包资源地址
+    chunkFilename: 'js/[name].[contenthash:8].chunk.js', // 拆分出来的chunk包资源地址
     assetModuleFilename: 'static/images/[hash][ext][query]', // type: asset 类型的资源，比如字体，图片等打包出来的资源地址
     clean: true,
   },
@@ -127,7 +127,7 @@ module.exports = {
     ],
   },
   resolve: {
-    extensions: ['.js', '.jsx','.tsx', '.json', '.less'],
+    extensions: ['.js', '.jsx', '.tsx', '.json', '.less'],
     alias: {
       '@': path.resolve(__dirname, '../src'),
     },
@@ -166,12 +166,16 @@ module.exports = {
      * runtimeChunk 用于将运行时代码（runtime）从入口文件中提取出来，生成单独的 chunk 文件。
      * 为什么需要提取运行时代码？当入口文件的内容发生变化时，如果运行时代码和业务代码混合在一起，整个文件会失效，浏览器缓存无法有效利用。
      */
-    runtimeChunk: true, 
+    runtimeChunk: {
+      name: entrypoint => `runtime~${entrypoint.name}.js`,
+    },
     splitChunks: {
       // 表示选择哪些 chunks 进行分割，可选值有：async，initial和all
       chunks: 'all',
       // 表示新分离出的chunk必须大于等于minSize，默认为30000，约30kb。
       minSize: 3000,
+      // 大于300kb的包会被单独打包。
+      // maxSize: 300000,
       // 表示一个模块至少应被minChunks个chunk所包含才能分割。默认为1。
       minChunks: 1,
       // 表示按需加载文件时，并行请求的最大数目。默认为5。
@@ -182,7 +186,9 @@ module.exports = {
       automaticNameDelimiter: '~',
       // 设置chunk的文件名。默认为true。当为true时，splitChunks基于chunk和cacheGroups的key自动命名。
       name: false,
-      // cacheGroups 下可以可以配置多个组，每个组根据test设置条件，符合test条件的模块，就分配到该组。模块可以被多个组引用，但最终会根据priority来决定打包到哪个组中。默认将所有来自 node_modules目录的模块打包至vendors组，将两个以上的chunk所共享的模块打包至default组。
+      // cacheGroups 下可以可以配置多个组，每个组根据test设置条件，符合test条件的模块，就分配到该组。
+      // 模块可以被多个组引用，但最终会根据priority来决定打包到哪个组中。
+      // 默认将所有来自 node_modules目录的模块打包至vendors组，将两个以上的chunk所共享的模块打包至default组。
       cacheGroups: {
         vendors: {
           test: /[\\/]node_modules[\\/]/,
@@ -193,6 +199,12 @@ module.exports = {
           priority: -20,
           reuseExistingChunk: true,
         },
+        // coreJs: {
+        //   test: /[\\/]node_modules[\\/]core-js[\\/]/, // 匹配 core-js 包
+        //   name: 'core-js', // 输出文件名
+        //   priority: 10, // 优先级，确保 core-js 单独打包
+        //   enforce: true, // 强制分离，即使它是小模块
+        // },
       },
     },
   },
