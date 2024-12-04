@@ -3,6 +3,7 @@ const { merge } = require('webpack-merge');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const HtmlWebpackTagsPlugin = require("html-webpack-tags-plugin");
+const AddHelloWorldPlugin = require('./plugins/AddHelloWorldPlugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const config_base = require('./webpack.config.base');
@@ -10,6 +11,10 @@ const config_base = require('./webpack.config.base');
 const config_pro = {
   mode: 'development',
   devtool: 'eval-cheap-module-source-map',
+  stats: {
+    children: true,
+    errorDetails: true,
+  },
   plugins: [
     new MiniCssExtractPlugin({
       filename: "static/css/[name].css",
@@ -27,6 +32,7 @@ const config_pro = {
     new BundleAnalyzerPlugin({
       analyzerPort: 8080, // 与charles的端口区分开
     }),
+    new AddHelloWorldPlugin() // 使用自定义插件
   ].filter(Boolean),
 };
 

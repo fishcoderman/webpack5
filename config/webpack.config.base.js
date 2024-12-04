@@ -138,7 +138,7 @@ module.exports = {
       template: path.resolve(__dirname, "../public/index.html"),
       minify: false, // 压缩html
       removeComments: true,
-      title: 'development',
+      title: 'webpack-react',
     }),
     // 打包进度条
     new ProgressBarPlugin(),

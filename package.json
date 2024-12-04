@@ -7,9 +7,9 @@
   "scripts": {
     "start": "cross-env NODE_ENV=development webpack serve --config config/webpack.config.dev.js",
     "build": "cross-env NODE_ENV=production webpack --config config/webpack.config.production.js",
-    "test": "cross-env REPORT=true NODE_ENV=test webpack --config config/webpack.config.test.js",
+    "test": "cross-env NODE_ENV=development webpack --config config/webpack.config.test.js",
     "report": "cross-env REPORT=true NODE_ENV=production webpack --config config/webpack.config.production.js",
-    "demo": "node config/test.js"
+    "plugin": "webpack --config config/webpack.config.plugin.js"
   },
   "keywords": [],
   "author": "",
